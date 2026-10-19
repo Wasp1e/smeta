@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Смета ремонта</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1C2126">
+<meta name="description" content="Сметы на отделку квартир: объекты, помещения, метраж и цены за м²">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Смета">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: mobile-first single column app; sticky header with tape-measure ticks, yellow "tape" totals card as the one bold element */
+:root{
+  --bg:#ECEEF0; --surface:#FFFFFF; --surface-2:#F5F6F7; --ink:#1C2126; --muted:#5B646D; --line:#D4D8DC;
+  --accent:#E9A80E; --accent-ink:#1C2126; --accent-soft:#FBEFC9;
+  --ok:#2B7A4B; --ok-soft:#DDF0E4; --danger:#B3372B; --danger-soft:#F7E0DD; --info:#2F5E8C; --info-soft:#DDE8F3;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#14171A; --surface:#1D2125; --surface-2:#23282D; --ink:#ECEEF0; --muted:#9AA3AC; --line:#30363C;
+  --accent:#F2B83A; --accent-ink:#14171A; --accent-soft:#3A3120;
+  --ok:#5CC28A; --ok-soft:#1E3328; --danger:#EC7B6E; --danger-soft:#3A2321; --info:#7FB0E0; --info-soft:#1F2C3A;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#14171A; --surface:#1D2125; --surface-2:#23282D; --ink:#ECEEF0; --muted:#9AA3AC; --line:#30363C;
+  --accent:#F2B83A; --accent-ink:#14171A; --accent-soft:#3A3120;
+  --ok:#5CC28A; --ok-soft:#1E3328; --danger:#EC7B6E; --danger-soft:#3A2321; --info:#7FB0E0; --info-soft:#1F2C3A;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--ink);font:15px/1.45 var(--f-body);-webkit-tap-highlight-color:transparent;min-height:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:10px;min-height:56px;padding-block:6px}
+.top h1{font:700 17px/1.2 var(--f-display);margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em}
+.tape{height:7px;background:
+  repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 10px) 0 0/100% 4px no-repeat,
+  repeating-linear-gradient(90deg,var(--ink) 0 1px,transparent 1px 50px) 0 0/100% 7px no-repeat,var(--accent);opacity:.95}
+.iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center;flex:none}
+.iconbtn:hover{background:var(--surface-2)}
+.iconbtn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.tabs{display:flex;gap:4px;padding:4px;background:var(--surface-2);border-radius:999px;border:1px solid var(--line)}
+.tabs button{flex:1;border:0;background:transparent;border-radius:999px;padding:8px 10px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
+main{padding-block:16px 120px;display:flex;flex-direction:column;gap:16px}
+.eyebrow{font:600 11px/1 var(--f-body);text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.muted{color:var(--muted)}
+
+/* project cards */
+.plist{display:flex;flex-direction:column;gap:10px}
+.pcard{display:grid;grid-template-columns:1fr auto;gap:4px 12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.pcard:hover{border-color:var(--muted)}
+.pcard .name{font-weight:600;font-size:16px;min-width:0}
+.pcard .sum{font:700 16px var(--f-num);text-align:right}
+.pcard .meta{color:var(--muted);font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard .rest{font:500 13px var(--f-num);text-align:right;color:var(--muted)}
+.chip{display:inline-block;font:600 11px/1 var(--f-body);padding:4px 8px;border-radius:999px;vertical-align:2px;margin-left:6px;letter-spacing:.02em}
+.st-est{background:var(--info-soft);color:var(--info)}
+.st-work{background:var(--accent-soft);color:var(--ink)}
+.st-done{background:var(--ok-soft);color:var(--ok)}
+.ex{background:var(--surface-2);color:var(--muted);border:1px dashed var(--line)}
+
+/* totals tape card */
+.totals{background:var(--accent);color:var(--accent-ink);border-radius:var(--r);padding:16px;display:grid;gap:12px;position:relative;overflow:hidden}
+.totals::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:
+  repeating-linear-gradient(90deg,currentColor 0 1px,transparent 1px 8px) 0 100%/100% 5px no-repeat,
+  repeating-linear-gradient(90deg,currentColor 0 1.5px,transparent 1.5px 40px) 0 100%/100% 10px no-repeat;opacity:.55}
+.totals .big{font:700 clamp(28px,8vw,38px)/1 var(--f-num);letter-spacing:-.02em}
+.totals .lbl{font:600 11px/1 var(--f-body);text-transform:uppercase;letter-spacing:.09em;opacity:.75}
+.trows{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px 16px;padding-bottom:10px}
+.trows div{display:flex;flex-direction:column;gap:3px}
+.trows b{font:700 15px var(--f-num)}
+.pinfo{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:14px}
+.pinfo span{min-width:0;overflow-wrap:anywhere}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toolbar .tabs{flex:1;min-width:240px}
+
+/* room groups */
+.room{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.room-h{display:flex;align-items:baseline;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.room-h h3{margin:0;font:700 14px/1.2 var(--f-display);flex:1;min-width:0}
+.room-h .num{font-weight:700}
+.room-h .addin{border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:600;padding:2px 4px}
+.item{display:grid;grid-template-columns:1fr auto;gap:2px 12px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:transparent;padding:11px 16px}
+.item:first-of-type{border-top:0}
+.item:hover{background:var(--surface-2)}
+.item .n{min-width:0;font-weight:500}
+.item .s{font:700 15px var(--f-num);text-align:right}
+.item .c{color:var(--muted);font:500 13px var(--f-num)}
+.kind{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;vertical-align:1px}
+.k-work{background:var(--ink)}
+.k-mat{background:transparent;border:1.5px solid var(--muted)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
+
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:28px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font:700 15px var(--f-display);margin-bottom:6px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;border:1px solid var(--line);background:var(--surface);padding:10px 16px;font-weight:600;min-height:44px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn.danger{color:var(--danger);border-color:var(--danger-soft);background:var(--danger-soft)}
+.btn.danger.armed{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+
+.fab{position:fixed;right:max(18px,calc(env(safe-area-inset-right,0px) + 18px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:15;height:58px;padding:0 22px 0 18px;border-radius:999px;border:0;background:var(--accent);color:var(--accent-ink);font:700 15px var(--f-body);display:flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(0,0,0,.22)}
+.fab svg{width:24px;height:24px;stroke:currentColor;stroke-width:2.5;fill:none;stroke-linecap:round}
+
+/* catalog */
+.cat-row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:transparent;padding:11px 16px}
+.cat-row:first-of-type{border-top:0}
+.cat-row:hover{background:var(--surface-2)}
+.cat-row .p{font:700 14px var(--f-num);text-align:right;white-space:nowrap}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,12,14,.5);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:640px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:8px max(16px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));animation:up .2s ease-out}
+@media (min-width:700px){.scrim{align-items:center}.sheet{border-radius:16px;padding-bottom:20px}}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 10px}
+.sheet h2{font:700 18px/1.2 var(--f-display);margin:0 0 14px;text-wrap:balance}
+form{display:flex;flex-direction:column;gap:12px}
+label.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+label.f>span{font-size:13px;font-weight:600;color:var(--muted)}
+.inp{width:100%;min-height:46px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);font-size:16px}
+.inp:focus{border-color:var(--ink);outline:none;background:var(--surface)}
+textarea.inp{min-height:70px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1.1fr .9fr 1fr;gap:10px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg label{flex:1;position:relative}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;text-align:center;padding:10px 6px;font-weight:600;color:var(--muted);background:var(--surface-2)}
+.seg input:checked+span{background:var(--ink);color:var(--bg)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:-2px}
+.livesum{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px;border-radius:8px;background:var(--accent-soft)}
+.livesum b{font:700 22px var(--f-num)}
+.calc{border:1px solid var(--line);border-radius:10px;padding:0}
+.calc summary{padding:12px 14px;font-weight:600;cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+.calc summary::after{content:"＋";color:var(--muted)}
+.calc[open] summary::after{content:"−"}
+.calc .in{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+.calc .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.calc .grid4 label.f>span{font-size:12px}
+.calc .grid4 .inp{padding:8px;min-height:42px;text-align:center}
+.calc .res{display:grid;grid-template-columns:1fr;gap:6px}
+.calc .res button{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;padding:9px 12px;text-align:left}
+.calc .res button:hover{border-color:var(--ink)}
+.calc .res b{font:700 14px var(--f-num);white-space:nowrap}
+.pick{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.pick button{flex:none;border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:500;white-space:nowrap}
+.pick button:hover{border-color:var(--ink)}
+.hint{font-size:12px;color:var(--muted)}
+.sheet .actions{margin-top:6px}
+.sheet .actions .primary{flex:1}
+
+.backup{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.install{background:var(--info-soft);color:var(--ink);border-radius:var(--r);padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.install p{margin:0;flex:1;min-width:200px;font-size:14px}
+
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;z-index:60;max-width:calc(100% - 32px);text-align:center}
+
+#print{display:none}
+@media print{
+  body>*:not(#print){display:none!important}
+  #print{display:block;color:#000;background:#fff;font:12px/1.4 var(--f-body)}
+  #print h1{font:700 18px var(--f-display);margin:0 0 4px}
+  #print table{width:100%;border-collapse:collapse;margin-top:10px}
+  #print th,#print td{border:1px solid #999;padding:4px 6px;text-align:left}
+  #print td.r,#print th.r{text-align:right;font-family:var(--f-num)}
+  #print .grp td{background:#eee;font-weight:700}
+  body::before{display:none}
+}
+</style>
+</head>
+<body>
+<header class="top" id="top"></header>
+<div class="tape" aria-hidden="true"></div>
+<main class="wrap" id="app"></main>
+<div id="sheetRoot"></div>
+<div id="print"></div>
+
+<script>
+(function(){
+"use strict";
+var KEY="remont-smeta-v1";
+var UNITS=["м²","м.п.","шт","м³","кг","точка","компл.","услуга"];
+var ROOMS=["Прихожая","Коридор","Гостиная","Спальня","Детская","Кухня","Санузел","Ванная","Туалет","Балкон","Вся квартира"];
+var STATUS={est:"Смета",work:"В работе",done:"Завершён"};
+var inFrame=false; try{inFrame=window.self!==window.top}catch(e){inFrame=true}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function num(v){var n=parseFloat(String(v==null?"":v).replace(/\s/g,"").replace(",","."));return isFinite(n)?n:0}
+function r2(n){return Math.round(n*100)/100}
+var fmtN=new Intl.NumberFormat("ru-RU",{maximumFractionDigits:2});
+function money(n){return fmtN.format(Math.round(n*100)/100)+" ₽"}
+function qtyS(n){return fmtN.format(n)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+
+/* ---------- data ---------- */
+function seed(){
+  var cat=[
+    ["work","Демонтаж напольного покрытия","м²",250],["work","Демонтаж старой плитки","м²",400],
+    ["work","Штукатурка стен по маякам","м²",750],["work","Шпаклёвка стен под покраску","м²",450],
+    ["work","Покраска стен в 2 слоя","м²",350],["work","Поклейка обоев","м²",400],
+    ["work","Стяжка пола","м²",700],["work","Гидроизоляция","м²",450],
+    ["work","Укладка ламината","м²",450],["work","Укладка плитки (пол)","м²",1500],
+    ["work","Укладка плитки (стены)","м²",1700],["work","Натяжной потолок","м²",900],
+    ["work","Монтаж плинтуса","м.п.",250],["work","Электроточка (розетка, выключатель)","точка",900],
+    ["work","Установка межкомнатной двери","шт",4500],["work","Разводка сантехники","точка",3500],
+    ["mat","Штукатурка гипсовая, 30 кг","шт",520],["mat","Шпаклёвка финишная, 20 кг","шт",650],
+    ["mat","Ламинат 33 класс","м²",1400],["mat","Плиточный клей, 25 кг","шт",600],["mat","Грунтовка, 10 л","шт",900]
+  ].map(function(a){return{id:uid(),kind:a[0],name:a[1],unit:a[2],price:a[3]}});
+  var p={id:uid(),example:true,name:"Пример: 2-к квартира",address:"ул. Лесная, 12, кв. 48",client:"Ирина",phone:"",status:"work",discount:5,paid:150000,notes:"Это пример. Удалите его, когда добавите свой объект.",created:Date.now(),
+    dims:{"Гостиная":{l:5.2,w:3.8,h:2.7,o:4.2},"Кухня":{l:3.4,w:3,h:2.7,o:2.6},"Санузел":{l:2.2,w:1.7,h:2.6,o:1.4}},
+    items:[]};
+  function it(room,kind,name,unit,qty,price){p.items.push({id:uid(),room:room,kind:kind,name:name,unit:unit,qty:qty,price:price})}
+  it("Гостиная","work","Штукатурка стен по маякам","м²",44.4,750);
+  it("Гостиная","work","Шпаклёвка стен под покраску","м²",44.4,450);
+  it("Гостиная","work","Покраска стен в 2 слоя","м²",44.4,350);
+  it("Гостиная","work","Укладка ламината","м²",19.76,450);
+  it("Гостиная","mat","Ламинат 33 класс","м²",21.7,1400);
+  it("Гостиная","work","Монтаж плинтуса","м.п.",18,250);
+  it("Кухня","work","Стяжка пола","м²",10.2,700);
+  it("Кухня","work","Укладка плитки (пол)","м²",10.2,1500);
+  it("Кухня","work","Электроточка (розетка, выключатель)","точка",8,900);
+  it("Санузел","work","Гидроизоляция","м²",5.5,450);
+  it("Санузел","work","Укладка плитки (стены)","м²",18.72,1700);
+  it("Санузел","work","Разводка сантехники","точка",5,3500);
+  return {projects:[p],catalog:cat};
+}
+var db;
+function load(){
+  try{var s=localStorage.getItem(KEY);if(s){db=JSON.parse(s);if(db&&db.projects&&db.catalog)return}}catch(e){}
+  db=seed();
+}
+var saveFailed=false;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){if(!saveFailed){saveFailed=true;toast("Не получилось сохранить в памяти браузера")}}}
+function proj(id){for(var i=0;i<db.projects.length;i++)if(db.projects[i].id===id)return db.projects[i];return null}
+
+function totals(p){
+  var w=0,m=0;p.items.forEach(function(i){var s=r2(i.qty*i.price);if(i.kind==="mat")m+=s;else w+=s});
+  var sub=w+m,disc=r2(w*(num(p.discount)/100)),total=sub-disc,paid=num(p.paid);
+  return{work:w,mat:m,sub:sub,disc:disc,total:total,paid:paid,rest:total-paid};
+}
+
+/* ---------- ui state ---------- */
+var ui={screen:"list",pid:null,filter:"all"};
+var app=document.getElementById("app"),top=document.getElementById("top"),sheetRoot=document.getElementById("sheetRoot");
+var ICON={
+  back:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+  edit:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  share:'<svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
+  print:'<svg viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>',
+  copy:'<svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>'
+};
+
+function go(screen,pid,push){
+  ui.screen=screen;ui.pid=pid||null;if(screen!=="project")ui.filter="all";
+  if(push!==false){try{history.pushState({screen:screen,pid:pid||null},"")}catch(e){}}
+  render();window.scrollTo(0,0);
+}
+var sheetOpen=false,skipPop=false;
+window.addEventListener("popstate",function(ev){
+  if(skipPop){skipPop=false;return}
+  if(sheetOpen){hideSheet();return}
+  var s=ev.state||{screen:"list"};
+  if(s.screen==="project"&&!proj(s.pid))s={screen:"list"};
+  ui.screen=s.screen;ui.pid=s.pid||null;render();
+});
+
+/* ---------- render ---------- */
+function render(){
+  if(ui.screen==="project"&&proj(ui.pid))return renderProject(proj(ui.pid));
+  if(ui.screen==="catalog")return renderCatalog();
+  ui.screen="list";renderList();
+}
+function topTabs(active){
+  return '<div class="wrap" style="flex-direction:column;align-items:stretch;gap:8px;padding-block:10px">'+
+    '<div style="display:flex;align-items:center;gap:10px"><h1>Смета ремонта</h1><span class="eyebrow num">'+new Date().toLocaleDateString("ru-RU")+'</span></div>'+
+    '<div class="tabs" role="group"><button data-act="tab" data-v="list" aria-pressed="'+(active==="list")+'">Объекты</button><button data-act="tab" data-v="catalog" aria-pressed="'+(active==="catalog")+'">Мои расценки</button></div></div>';
+}
+var deferredInstall=null;
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredInstall=e;if(ui.screen==="list")render()});
+
+function renderList(){
+  top.innerHTML=topTabs("list");
+  var h="";
+  if(deferredInstall)h+='<div class="install"><p>Установите приложение на телефон: будет открываться с рабочего стола и работать без интернета.</p><button class="btn primary" data-act="install">Установить</button></div>';
+  var sorted=db.projects.slice().sort(function(a,b){return(b.created||0)-(a.created||0)});
+  var sumAll=0,restAll=0;sorted.forEach(function(p){if(p.status!=="done"){var t=totals(p);sumAll+=t.total;restAll+=t.rest}});
+  if(sorted.length){
+    h+='<div class="totals"><div><div class="lbl">Открытые объекты · '+sorted.filter(function(p){return p.status!=="done"}).length+'</div></div><div class="big num">'+money(sumAll)+'</div>'+
+       '<div class="trows"><div><span class="lbl">Ещё к оплате</span><b>'+money(restAll)+'</b></div><div><span class="lbl">Всего объектов</span><b>'+sorted.length+'</b></div></div></div>';
+    h+='<div class="eyebrow">Объекты</div><div class="plist">';
+    sorted.forEach(function(p){
+      var t=totals(p);
+      h+='<button class="pcard" data-act="open" data-id="'+p.id+'"><span class="name">'+esc(p.name||"Без названия")+
+        '<span class="chip st-'+(p.status||"est")+'">'+STATUS[p.status||"est"]+'</span>'+(p.example?'<span class="chip ex">пример</span>':'')+
+        '</span><span class="sum">'+money(t.total)+'</span><span class="meta">'+esc([p.address,p.client].filter(Boolean).join(" · ")||(p.items.length+" позиций"))+
+        '</span><span class="rest">'+(t.rest>0?"остаток "+money(t.rest):"оплачено")+'</span></button>';
+    });
+    h+='</div>';
+  }else{
+    h+='<div class="empty"><b>Пока нет объектов</b>Нажмите «Объект» внизу, чтобы завести первую квартиру и начать смету.</div>';
+  }
+  h+='<div class="backup"><div class="eyebrow">Резервная копия</div><div class="hint">Все данные хранятся только на этом телефоне. Время от времени сохраняйте копию, чтобы не потерять сметы при смене телефона.</div><div class="actions">'+
+    (inFrame?'<button class="btn" data-act="copyBackup">'+ICON.copy+'Скопировать данные</button>':'<button class="btn" data-act="downloadBackup">Сохранить файл</button>')+
+    '<label class="btn" for="importFile" style="cursor:pointer">Загрузить из файла</label><input type="file" id="importFile" accept=".json,application/json" hidden></div></div>';
+  app.innerHTML=h;
+  fab("Объект","newProject");
+}
+function fab(label,act){
+  var f=document.getElementById("fab");
+  if(!f){f=document.createElement("button");f.id="fab";f.className="fab";document.body.appendChild(f)}
+  f.innerHTML=ICON.plus+esc(label);f.dataset.act=act;f.hidden=false;
+}
+
+function renderProject(p){
+  top.innerHTML='<div class="wrap"><button class="iconbtn" data-act="back" aria-label="Назад">'+ICON.back+'</button><h1>'+esc(p.name||"Без названия")+'</h1><button class="iconbtn" data-act="editProject" aria-label="Изменить объект">'+ICON.edit+'</button></div>';
+  var t=totals(p),h="";
+  var info=[];if(p.address)info.push(esc(p.address));if(p.client)info.push("Заказчик: "+esc(p.client)+(p.phone?", "+esc(p.phone):""));
+  info.push('<span class="chip st-'+(p.status||"est")+'" style="margin:0">'+STATUS[p.status||"est"]+'</span>');
+  h+='<div class="pinfo">'+info.map(function(x){return"<span>"+x+"</span>"}).join("")+'</div>';
+  h+='<div class="totals"><div class="lbl">Итого по смете</div><div class="big num">'+money(t.total)+'</div><div class="trows">'+
+    '<div><span class="lbl">Работы</span><b>'+money(t.work)+'</b></div><div><span class="lbl">Материалы</span><b>'+money(t.mat)+'</b></div>'+
+    (t.disc?'<div><span class="lbl">Скидка '+qtyS(num(p.discount))+'% на работы</span><b>−'+money(t.disc)+'</b></div>':'')+
+    '<div><span class="lbl">Оплачено</span><b>'+money(t.paid)+'</b></div><div><span class="lbl">Остаток</span><b>'+money(t.rest)+'</b></div></div></div>';
+  if(p.notes)h+='<div class="hint" style="font-size:14px">'+esc(p.notes)+'</div>';
+  h+='<div class="toolbar"><div class="tabs" role="group">'+[["all","Всё"],["work","Работы"],["mat","Материалы"]].map(function(f){return'<button data-act="filter" data-v="'+f[0]+'" aria-pressed="'+(ui.filter===f[0])+'">'+f[1]+'</button>'}).join("")+'</div></div>';
+  var items=p.items.filter(function(i){return ui.filter==="all"||i.kind===ui.filter});
+  if(!items.length){
+    h+='<div class="empty"><b>'+(p.items.length?"Нет позиций в этом фильтре":"Смета пустая")+'</b>Нажмите «Позиция», выберите помещение и работу, укажите метраж и цену за единицу.</div>';
+  }else{
+    var groups={},order=[];
+    items.forEach(function(i){var r=i.room||"Без помещения";if(!groups[r]){groups[r]=[];order.push(r)}groups[r].push(i)});
+    order.forEach(function(r){
+      var s=groups[r].reduce(function(a,i){return a+r2(i.qty*i.price)},0);
+      h+='<section class="room"><div class="room-h"><h3>'+esc(r)+'</h3><span class="num">'+money(s)+'</span><button class="addin" data-act="newItem" data-room="'+esc(r)+'" aria-label="Добавить в '+esc(r)+'">＋</button></div>';
+      groups[r].forEach(function(i){
+        h+='<button class="item" data-act="editItem" data-id="'+i.id+'"><span class="n"><span class="kind k-'+i.kind+'"></span>'+esc(i.name)+'</span><span class="s">'+money(r2(i.qty*i.price))+'</span><span class="c">'+qtyS(i.qty)+' '+esc(i.unit)+' × '+money(i.price)+'</span><span></span></button>';
+      });
+      h+='</section>';
+    });
+    h+='<div class="legend"><span><span class="kind k-work"></span>работа</span><span><span class="kind k-mat"></span>материал</span></div>';
+  }
+  h+='<div class="actions"><button class="btn" data-act="share">'+ICON.share+'Отправить смету</button>'+(inFrame?'':'<button class="btn" data-act="print">'+ICON.print+'Печать / PDF</button>')+'</div>';
+  app.innerHTML=h;
+  fab("Позиция","newItem");
+}
+
+function renderCatalog(){
+  top.innerHTML=topTabs("catalog");
+  var h='<div class="hint" style="font-size:14px">Ваши обычные цены. При добавлении позиции в смету их можно выбрать одним нажатием. Цены в примере ориентировочные — поменяйте на свои.</div>';
+  [["work","Работы"],["mat","Материалы"]].forEach(function(k){
+    var list=db.catalog.filter(function(c){return c.kind===k[0]}).sort(function(a,b){return a.name.localeCompare(b.name,"ru")});
+    h+='<section class="room"><div class="room-h"><h3>'+k[1]+'</h3><span class="muted">'+list.length+'</span></div>';
+    if(!list.length)h+='<div class="cat-row muted">Пусто</div>';
+    list.forEach(function(c){h+='<button class="cat-row" data-act="editCat" data-id="'+c.id+'"><span>'+esc(c.name)+'</span><span class="p">'+money(c.price)+' / '+esc(c.unit)+'</span></button>'});
+    h+='</section>';
+  });
+  app.innerHTML=h;
+  fab("Расценка","newCat");
+}
+
+/* ---------- sheets ---------- */
+function showSheet(html,onMount){
+  sheetRoot.innerHTML='<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>'+html+'</div></div>';
+  if(!sheetOpen){sheetOpen=true;try{history.pushState({sheet:true,screen:ui.screen,pid:ui.pid},"")}catch(e){}}
+  var f=document.getElementById("fab");if(f)f.hidden=true;
+  if(onMount)onMount(sheetRoot.querySelector(".sheet"));
+}
+function hideSheet(){sheetOpen=false;sheetRoot.innerHTML="";var f=document.getElementById("fab");if(f)f.hidden=false}
+function closeSheet(){if(!sheetOpen)return;hideSheet();skipPop=true;try{history.back()}catch(e){skipPop=false}setTimeout(function(){skipPop=false},400)}
+
+function seg(name,val,opts){return'<div class="seg">'+opts.map(function(o){return'<label><input type="radio" name="'+name+'" value="'+o[0]+'"'+(val===o[0]?" checked":"")+'><span>'+o[1]+'</span></label>'}).join("")+'</div>'}
+function unitSel(id,val){return'<select class="inp" id="'+id+'" name="unit">'+UNITS.map(function(u){return'<option'+(u===val?" selected":"")+'>'+u+'</option>'}).join("")+(UNITS.indexOf(val)<0&&val?'<option selected>'+esc(val)+'</option>':'')+'</select>'}
+function delBtn(){return'<button type="button" class="btn danger" data-act="armDel">Удалить</button>'}
+
+function projectSheet(p){
+  var isNew=!p;p=p||{name:"",address:"",client:"",phone:"",status:"est",discount:0,paid:0,notes:""};
+  showSheet('<h2>'+(isNew?"Новый объект":"Объект")+'</h2><form id="pf">'+
+    '<label class="f"><span>Название</span><input class="inp" id="p_name" name="name" required value="'+esc(p.name)+'" placeholder="Например: 1-к квартира, ЖК Северный"></label>'+
+    '<label class="f"><span>Адрес</span><input class="inp" id="p_addr" name="address" value="'+esc(p.address)+'" placeholder="Улица, дом, квартира"></label>'+
+    '<div class="row2"><label class="f"><span>Заказчик</span><input class="inp" id="p_client" name="client" value="'+esc(p.client)+'"></label><label class="f"><span>Телефон</span><input class="inp" id="p_phone" name="phone" type="tel" value="'+esc(p.phone)+'"></label></div>'+
+    '<label class="f"><span>Статус</span>'+seg("status",p.status||"est",[["est","Смета"],["work","В работе"],["done","Завершён"]])+'</label>'+
+    '<div class="row2"><label class="f"><span>Скидка на работы, %</span><input class="inp num" id="p_disc" name="discount" inputmode="decimal" value="'+(p.discount||"")+'" placeholder="0"></label><label class="f"><span>Оплачено (аванс), ₽</span><input class="inp num" id="p_paid" name="paid" inputmode="decimal" value="'+(p.paid||"")+'" placeholder="0"></label></div>'+
+    '<label class="f"><span>Заметки</span><textarea class="inp" id="p_notes" name="notes" placeholder="Сроки, договорённости, что купить">'+esc(p.notes)+'</textarea></label>'+
+    '<div class="actions"><button class="btn primary" type="submit">'+(isNew?"Создать":"Сохранить")+'</button>'+(isNew?'':delBtn())+'</div></form>',function(el){
+      var f=el.querySelector("form");
+      f.addEventListener("submit",function(e){e.preventDefault();var d=new FormData(f);
+        var t=p;if(isNew){t={id:uid(),created:Date.now(),items:[],dims:{}};db.projects.push(t)}
+        t.name=d.get("name").trim();t.address=d.get("address").trim();t.client=d.get("client").trim();t.phone=d.get("phone").trim();
+        t.status=d.get("status");t.discount=num(d.get("discount"));t.paid=num(d.get("paid"));t.notes=d.get("notes").trim();delete t.example;
+        save();closeSheet();if(isNew)go("project",t.id);else render();toast(isNew?"Объект создан":"Сохранено")});
+      el.dataset.del="project";el.dataset.id=p.id||"";
+      if(isNew)setTimeout(function(){el.querySelector("#p_name").focus()},50);
+    });
+}
+
+function itemSheet(p,item,presetRoom){
+  var isNew=!item;
+  var lastRoom=presetRoom||(p.items.length?p.items[p.items.length-1].room:"");
+  item=item||{room:lastRoom,kind:"work",name:"",unit:"м²",qty:"",price:""};
+  var rooms=[];p.items.forEach(function(i){if(i.room&&rooms.indexOf(i.room)<0)rooms.push(i.room)});Object.keys(p.dims||{}).forEach(function(r){if(rooms.indexOf(r)<0)rooms.push(r)});
+  var allRooms=rooms.concat(ROOMS.filter(function(r){return rooms.indexOf(r)<0}));
+  showSheet('<h2>'+(isNew?"Новая позиция":"Позиция")+'</h2><form id="itf">'+
+    '<label class="f"><span>Помещение</span><input class="inp" id="i_room" name="room" list="roomList" value="'+esc(item.room)+'" placeholder="Кухня, санузел…" autocomplete="off"><datalist id="roomList">'+allRooms.map(function(r){return'<option value="'+esc(r)+'">'}).join("")+'</datalist></label>'+
+    '<label class="f"><span>Что это</span>'+seg("kind",item.kind,[["work","Работа"],["mat","Материал"]])+'</label>'+
+    '<div class="f"><span class="eyebrow">Из моих расценок</span><div class="pick" id="pick"></div></div>'+
+    '<label class="f"><span>Наименование</span><input class="inp" id="i_name" name="name" required value="'+esc(item.name)+'" placeholder="Например: укладка плитки"></label>'+
+    '<details class="calc" id="calc"'+(isNew?" open":"")+'><summary>Посчитать метраж по размерам</summary><div class="in">'+
+      '<div class="grid4"><label class="f"><span>Длина, м</span><input class="inp num" id="c_l" inputmode="decimal"></label><label class="f"><span>Ширина, м</span><input class="inp num" id="c_w" inputmode="decimal"></label><label class="f"><span>Высота, м</span><input class="inp num" id="c_h" inputmode="decimal"></label><label class="f"><span>Проёмы, м²</span><input class="inp num" id="c_o" inputmode="decimal"></label></div>'+
+      '<div class="res" id="calcRes"></div><div class="hint">Нажмите на нужную строку — число попадёт в «Количество». Размеры запоминаются для помещения.</div></div></details>'+
+    '<div class="row3"><label class="f"><span>Количество</span><input class="inp num" id="i_qty" name="qty" inputmode="decimal" required value="'+(item.qty===""?"":item.qty)+'" placeholder="0"></label>'+
+      '<label class="f"><span>Ед.</span>'+unitSel("i_unit",item.unit)+'</label>'+
+      '<label class="f"><span>Цена за ед., ₽</span><input class="inp num" id="i_price" name="price" inputmode="decimal" value="'+(item.price===""?"":item.price)+'" placeholder="0"></label></div>'+
+    '<div class="livesum"><span class="muted">Сумма</span><b id="lsum">0 ₽</b></div>'+
+    (isNew?'<label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="i_tocat"> Запомнить цену в «Мои расценки»</label>':'')+
+    '<div class="actions"><button class="btn primary" type="submit">'+(isNew?"Добавить":"Сохранить")+'</button>'+(isNew?'<button class="btn" type="button" data-act="saveMore">Добавить и ещё</button>':delBtn())+'</div></form>',function(el){
+      var f=el.querySelector("form"),$=function(s){return el.querySelector(s)};
+      el.dataset.del="item";el.dataset.id=item.id||"";
+      function kind(){return(f.querySelector('input[name="kind"]:checked')||{}).value||"work"}
+      function upd(){$("#lsum").textContent=money(r2(num($("#i_qty").value)*num($("#i_price").value)))}
+      function pick(){
+        var list=db.catalog.filter(function(c){return c.kind===kind()}).sort(function(a,b){return a.name.localeCompare(b.name,"ru")});
+        $("#pick").innerHTML=list.length?list.map(function(c){return'<button type="button" data-cid="'+c.id+'">'+esc(c.name)+' · '+qtyS(c.price)+' ₽/'+esc(c.unit)+'</button>'}).join(""):'<span class="hint">Пока пусто — добавьте расценки во вкладке «Мои расценки».</span>';
+      }
+      function dims(){var d=(p.dims||{})[$("#i_room").value.trim()];["l","w","h","o"].forEach(function(k){$("#c_"+k).value=d&&d[k]?String(d[k]).replace(".",","):""});calc()}
+      function calc(){
+        var l=num($("#c_l").value),w=num($("#c_w").value),h=num($("#c_h").value),o=num($("#c_o").value),out=[];
+        if(l&&w){out.push(["Пол / потолок","Д × Ш",r2(l*w),"м²"]);out.push(["Периметр (плинтус)","2 × (Д + Ш)",r2(2*(l+w)),"м.п."])}
+        if(l&&w&&h)out.push(["Стены","2 × (Д + Ш) × В − проёмы",r2(Math.max(0,2*(l+w)*h-o)),"м²"]);
+        $("#calcRes").innerHTML=out.length?out.map(function(r){return'<button type="button" data-q="'+r[2]+'" data-u="'+r[3]+'"><span>'+r[0]+' <span class="hint">'+r[1]+'</span></span><b>'+qtyS(r[2])+' '+r[3]+'</b></button>'}).join(""):'<span class="hint">Введите длину и ширину помещения, для стен — ещё высоту.</span>';
+      }
+      function storeDims(){var r=$("#i_room").value.trim();if(!r)return;p.dims=p.dims||{};var d={l:num($("#c_l").value),w:num($("#c_w").value),h:num($("#c_h").value),o:num($("#c_o").value)};if(d.l||d.w||d.h||d.o)p.dims[r]=d}
+      pick();dims();upd();
+      f.addEventListener("input",function(e){if(e.target.id&&e.target.id.indexOf("c_")===0)calc();upd()});
+      f.addEventListener("change",function(e){if(e.target.name==="kind")pick();if(e.target.id==="i_room")dims()});
+      $("#pick").addEventListener("click",function(e){var b=e.target.closest("[data-cid]");if(!b)return;var c=db.catalog.filter(function(x){return x.id===b.dataset.cid})[0];if(!c)return;
+        $("#i_name").value=c.name;$("#i_price").value=String(c.price).replace(".",",");setUnit(c.unit);upd()});
+      $("#calcRes").addEventListener("click",function(e){var b=e.target.closest("[data-q]");if(!b)return;$("#i_qty").value=String(b.dataset.q).replace(".",",");setUnit(b.dataset.u);upd()});
+      function setUnit(u){var s=$("#i_unit");if(![].some.call(s.options,function(o){return o.value===u})){var o=document.createElement("option");o.textContent=u;s.appendChild(o)}s.value=u}
+      function commit(more){
+        if(!f.reportValidity())return;
+        var d=new FormData(f),t=item;
+        if(isNew){t={id:uid()};p.items.push(t)}
+        t.room=d.get("room").trim();t.kind=d.get("kind")||"work";t.name=d.get("name").trim();t.unit=d.get("unit");t.qty=r2(num(d.get("qty")));t.price=r2(num(d.get("price")));
+        storeDims();
+        if(isNew&&$("#i_tocat")&&$("#i_tocat").checked){var ex=db.catalog.filter(function(c){return c.name.toLowerCase()===t.name.toLowerCase()&&c.kind===t.kind})[0];
+          if(ex){ex.price=t.price;ex.unit=t.unit}else db.catalog.push({id:uid(),kind:t.kind,name:t.name,unit:t.unit,price:t.price})}
+        delete p.example;save();
+        if(more){render();var room=t.room;hideSheet();sheetOpen=true;itemSheet(p,null,room);toast("Добавлено: "+t.name)}
+        else{closeSheet();render();toast(isNew?"Позиция добавлена":"Сохранено")}
+      }
+      f.addEventListener("submit",function(e){e.preventDefault();commit(false)});
+      el.querySelector('[data-act="saveMore"]')&&el.querySelector('[data-act="saveMore"]').addEventListener("click",function(e){e.stopPropagation();commit(true)});
+      if(isNew&&!item.room)setTimeout(function(){$("#i_room").focus()},50);
+    });
+}
+
+function catSheet(c){
+  var isNew=!c;c=c||{kind:"work",name:"",unit:"м²",price:""};
+  showSheet('<h2>'+(isNew?"Новая расценка":"Расценка")+'</h2><form>'+
+    '<label class="f"><span>Что это</span>'+seg("kind",c.kind,[["work","Работа"],["mat","Материал"]])+'</label>'+
+    '<label class="f"><span>Наименование</span><input class="inp" id="k_name" name="name" required value="'+esc(c.name)+'" placeholder="Например: шпаклёвка потолка"></label>'+
+    '<div class="row2"><label class="f"><span>Ед.</span>'+unitSel("k_unit",c.unit)+'</label><label class="f"><span>Цена за ед., ₽</span><input class="inp num" id="k_price" name="price" inputmode="decimal" required value="'+(c.price===""?"":c.price)+'"></label></div>'+
+    '<div class="actions"><button class="btn primary" type="submit">'+(isNew?"Добавить":"Сохранить")+'</button>'+(isNew?'':delBtn())+'</div></form>',function(el){
+      var f=el.querySelector("form");el.dataset.del="cat";el.dataset.id=c.id||"";
+      f.addEventListener("submit",function(e){e.preventDefault();var d=new FormData(f),t=c;if(isNew){t={id:uid()};db.catalog.push(t)}
+        t.kind=d.get("kind");t.name=d.get("name").trim();t.unit=d.get("unit");t.price=r2(num(d.get("price")));save();closeSheet();render();toast(isNew?"Расценка добавлена":"Сохранено")});
+      if(isNew)setTimeout(function(){el.querySelector("#k_name").focus()},50);
+    });
+}
+
+function doDelete(sheet){
+  var kind=sheet.dataset.del,id=sheet.dataset.id;
+  if(kind==="project"){db.projects=db.projects.filter(function(p){return p.id!==id});save();hideSheet();go("list",null,false);try{history.replaceState({screen:"list"},"")}catch(e){}toast("Объект удалён");return}
+  if(kind==="item"){var p=proj(ui.pid);if(p)p.items=p.items.filter(function(i){return i.id!==id})}
+  if(kind==="cat")db.catalog=db.catalog.filter(function(c){return c.id!==id});
+  save();closeSheet();render();toast("Удалено");
+}
+
+/* ---------- export ---------- */
+function estimateText(p){
+  var t=totals(p),L=[];
+  L.push("СМЕТА: "+p.name);if(p.address)L.push("Адрес: "+p.address);if(p.client)L.push("Заказчик: "+p.client);
+  L.push("Дата: "+new Date().toLocaleDateString("ru-RU"));L.push("");
+  var groups={},order=[];p.items.forEach(function(i){var r=i.room||"Без помещения";if(!groups[r]){groups[r]=[];order.push(r)}groups[r].push(i)});
+  order.forEach(function(r){var s=0;L.push("— "+r.toUpperCase()+" —");
+    groups[r].forEach(function(i){var v=r2(i.qty*i.price);s+=v;L.push((i.kind==="mat"?"[мат.] ":"")+i.name+": "+qtyS(i.qty)+" "+i.unit+" × "+money(i.price)+" = "+money(v))});
+    L.push("Итого по помещению: "+money(s));L.push("")});
+  L.push("Работы: "+money(t.work));L.push("Материалы: "+money(t.mat));
+  if(t.disc)L.push("Скидка "+qtyS(num(p.discount))+"% на работы: −"+money(t.disc));
+  L.push("ИТОГО: "+money(t.total));if(t.paid)L.push("Оплачено: "+money(t.paid)+"\nОстаток: "+money(t.rest));
+  return L.join("\n");
+}
+function copyText(txt,okMsg){
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){toast(okMsg)},function(){fallbackCopy(txt,okMsg)})}else fallbackCopy(txt,okMsg);
+}
+function fallbackCopy(txt,okMsg){
+  showSheet('<h2>Скопируйте текст</h2><textarea class="inp num" id="cpy" style="min-height:260px;font-size:13px" readonly>'+esc(txt)+'</textarea><div class="hint">Выделите текст и скопируйте вручную.</div>',function(el){var a=el.querySelector("#cpy");a.focus();a.select()});
+}
+function printEstimate(p){
+  var t=totals(p),h='<h1>Смета: '+esc(p.name)+'</h1><div>'+esc([p.address,p.client&&("Заказчик: "+p.client),new Date().toLocaleDateString("ru-RU")].filter(Boolean).join(" · "))+'</div>';
+  h+='<table><thead><tr><th>Наименование</th><th class="r">Кол-во</th><th>Ед.</th><th class="r">Цена</th><th class="r">Сумма</th></tr></thead><tbody>';
+  var groups={},order=[];p.items.forEach(function(i){var r=i.room||"Без помещения";if(!groups[r]){groups[r]=[];order.push(r)}groups[r].push(i)});
+  order.forEach(function(r){h+='<tr class="grp"><td colspan="5">'+esc(r)+'</td></tr>';groups[r].forEach(function(i){h+='<tr><td>'+(i.kind==="mat"?"Материал: ":"")+esc(i.name)+'</td><td class="r">'+qtyS(i.qty)+'</td><td>'+esc(i.unit)+'</td><td class="r">'+money(i.price)+'</td><td class="r">'+money(r2(i.qty*i.price))+'</td></tr>'})});
+  h+='</tbody></table><p>Работы: '+money(t.work)+'<br>Материалы: '+money(t.mat)+(t.disc?'<br>Скидка: −'+money(t.disc):'')+'<br><b>Итого: '+money(t.total)+'</b>'+(t.paid?'<br>Оплачено: '+money(t.paid)+'<br>Остаток: '+money(t.rest):'')+'</p>';
+  document.getElementById("print").innerHTML=h;window.print();
+}
+
+var toastT;
+function toast(msg){var t=document.querySelector(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t)}t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true},2200)}
+
+/* ---------- events ---------- */
+document.addEventListener("click",function(e){
+  var el=e.target.closest("[data-act]");if(!el)return;var a=el.dataset.act,p=proj(ui.pid);
+  if(a==="scrim"){if(e.target===el)closeSheet();return}
+  if(a==="tab")go(el.dataset.v);
+  else if(a==="open")go("project",el.dataset.id);
+  else if(a==="back")history.length>1&&history.state&&history.state.screen==="project"?history.back():go("list");
+  else if(a==="newProject")projectSheet(null);
+  else if(a==="editProject")projectSheet(p);
+  else if(a==="newItem"&&p)itemSheet(p,null,el.dataset.room);
+  else if(a==="editItem"&&p)itemSheet(p,p.items.filter(function(i){return i.id===el.dataset.id})[0]);
+  else if(a==="newCat")catSheet(null);
+  else if(a==="editCat")catSheet(db.catalog.filter(function(c){return c.id===el.dataset.id})[0]);
+  else if(a==="filter"){ui.filter=el.dataset.v;render()}
+  else if(a==="armDel"){if(el.classList.contains("armed"))doDelete(el.closest(".sheet"));else{el.classList.add("armed");el.textContent="Точно удалить?";setTimeout(function(){if(el.isConnected){el.classList.remove("armed");el.textContent="Удалить"}},3000)}}
+  else if(a==="share"&&p){var txt=estimateText(p);
+    if(navigator.share&&!inFrame){navigator.share({title:"Смета: "+p.name,text:txt}).catch(function(){})}else copyText(txt,"Смета скопирована — вставьте в мессенджер")}
+  else if(a==="print"&&p)printEstimate(p);
+  else if(a==="install"&&deferredInstall){deferredInstall.prompt();deferredInstall.userChoice.finally(function(){deferredInstall=null;render()})}
+  else if(a==="copyBackup")copyText(JSON.stringify(db),"Данные скопированы");
+  else if(a==="downloadBackup"){var b=new Blob([JSON.stringify(db,null,1)],{type:"application/json"}),u=URL.createObjectURL(b),l=document.createElement("a");
+    l.href=u;l.download="smeta-backup-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(u)},2000);toast("Файл копии сохранён")}
+});
+document.addEventListener("change",function(e){
+  if(e.target.id!=="importFile")return;var file=e.target.files[0];if(!file)return;var r=new FileReader();
+  r.onload=function(){try{var d=JSON.parse(r.result);if(!d.projects||!d.catalog)throw 0;db=d;save();render();toast("Данные загружены: объектов "+d.projects.length)}catch(err){toast("Файл не подходит: нужна копия из этого приложения (.json)")}};
+  r.readAsText(file);
+});
+
+/* ---------- start ---------- */
+load();
+try{history.replaceState({screen:"list"},"")}catch(e){}
+render();
+if("serviceWorker" in navigator&&!inFrame&&location.protocol!=="file:"){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
+})();
+</script>
+</body>
+</html>

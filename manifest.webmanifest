@@ -1,0 +1,17 @@
+{
+  "name": "Смета ремонта",
+  "short_name": "Смета",
+  "description": "Сметы на отделку квартир: объекты, помещения, метраж и цены за м²",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ECEEF0",
+  "theme_color": "#1C2126",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
